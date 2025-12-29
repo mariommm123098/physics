@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telecomm: The Interactive Story</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f0;
+            --text-color: #1a1a1a;
+            --border-width: 3px;
+            --shadow-offset: 6px;
+            --radius: 20px;
+            
+            /* Palette */
+            --c-pink: #ffb7b2;
+            --c-blue: #a0e7e5;
+            --c-yellow: #fff4bd;
+            --c-green: #b9f6ca;
+            --c-purple: #e0bbe4;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace; /* Retro vibe */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- UI Components --- */
+        .btn-neo {
+            background: white;
+            border: var(--border-width) solid black;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0px black;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-neo:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px black;
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--c-yellow);
+            border: 2px solid black;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 5px;
+            box-shadow: 3px 3px 0 black;
+        }
+
+        /* --- Layout --- */
+        #app {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        .card-container {
+            width: 100%;
+            max-width: 800px;
+            height: 80vh;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border: var(--border-width) solid black;
+            border-radius: var(--radius);
+            box-shadow: 8px 8px 0px black;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateX(100px) scale(0.95);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            opacity: 0;
+            transform: translateX(-100px) scale(0.95);
+        }
+
+        /* --- Content Styling --- */
+        h1 { font-size: 2rem; margin-bottom: 10px; border-bottom: 3px solid black; display: inline-block; }
+        h2 { font-size: 1.5rem; margin-top: 0; }
+        p { line-height: 1.6; font-size: 1.1rem; }
+        .highlight { background-color: var(--c-yellow); padding: 0 5px; border: 1px solid black; }
+
+        .control-panel {
+            margin-top: auto;
+            background: #eee;
+            border: 2px solid black;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 black;
+        }
+
+        canvas {
+            width: 100%;
+            height: 250px;
+            border: 2px solid black;
+            border-radius: 12px;
+            background: #fff;
+            margin: 15px 0;
+            touch-action: none;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin: 10px 0;
+            accent-color: black;
+        }
+
+        /* --- Navbar --- */
+        .nav-bar {
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            background: var(--c-purple);
+            border-top: var(--border-width) solid black;
+        }
+
+        .progress-indicator {
+            font-weight: bold;
+            font-size: 1.2rem;
+            background: white;
+            padding: 5px 15px;
+            border: 2px solid black;
+            border-radius: 20px;
+        }
+
+        #lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--c-blue);
+        }
+
+        /* --- Mobile Adapt --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            p { font-size: 0.95rem; }
+            .slide { padding: 15px; }
+            canvas { height: 180px; }
+            .nav-bar { padding: 0 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="lang-toggle" class="btn-neo" onclick="toggleLang()">EN / 中</button>
+
+    <div id="app">
+        <div class="card-container" id="slider-root">
+            </div>
+    </div>
+
+    <div class="nav-bar">
+        <button class="btn-neo" onclick="changeSlide(-1)">← Prev</button>
+        <div class="progress-indicator" id="progress">1 / 5</div>
+        <button class="btn-neo" onclick="changeSlide(1)">Next →</button>
+    </div>
+
+<script>
+/**
+ * DATA & CONTENT LOGIC
+ */
+const content = {
+    en: {
+        s1: {
+            tag: "Intro",
+            title: "The Problem of Distance",
+            text: "Imagine trying to throw a piece of paper across an ocean. It fails. <br>But what if you wrap the paper around a rock?",
+            analogy: "<b>Paper</b> = Your Voice (Info). <b>Rock</b> = Carrier Wave.",
+            task: "Sound waves are lazy (low freq). Radio waves are strong (high freq). We need to piggyback.",
+        },
+        s2: {
+            tag: "Modulation",
+            title: "AM: Amplitude Modulation",
+            text: "The 'Rock' (Carrier) keeps its speed (frequency) but changes its size (amplitude) based on the 'Paper' (Signal).",
+            control1: "Signal Strength (Volume)",
+            control2: "Carrier Frequency",
+            note: "Notice: The outline (Envelope) matches the signal!",
+            eq: "Bandwidth = 2 × fm"
+        },
+        s3: {
+            tag: "Modulation",
+            title: "FM: Frequency Modulation",
+            text: "Now, the 'Rock' stays the same size, but vibrates faster or slower. <br>This is why FM sounds better - noise usually adds spikes (amplitude), which FM ignores.",
+            control1: "Signal Strength (Dev)",
+            note: "Observe: High signal = Compressed wave. Low signal = Stretched wave.",
+            eq: "Bandwidth ≈ 200 kHz (Wide!)"
+        },
+        s4: {
+            tag: "Digital",
+            title: "ADC: The Chopping Block",
+            text: "Computers don't understand waves. They need numbers. We must slice the wave.",
+            step1: "1. Sampling: Slicing time (horizontal).",
+            step2: "2. Quantization: Rounding values (vertical).",
+            control1: "Sample Rate (Time)",
+            control2: "Bit Depth (Levels)",
+            eq: "Resolution = Range / 2^n"
+        },
+        s5: {
+            tag: "Why Digital?",
+            title: "The Magic of Regeneration",
+            text: "Analog signals get messy with noise. Digital signals get messy too, but we can fix them completely.",
+            btn: "Clean Signal (Regenerate)",
+            status_dirty: "Status: Noisy Signal",
+            status_clean: "Status: Perfect Replica",
+            desc: "If it looks like a 1, make it a perfect 1. Noise is deleted."
+        },
+        s6: {
+            tag: "Calc",
+            title: "Attenuation & Decibels",
+            text: "Signal gets weaker over distance. We measure loss in dB.",
+            control1: "Distance (km)",
+            calc: "Loss = ",
+            formula: "dB = 10 log(P_out / P_in)"
+        }
+    },
+    zh: {
+        s1: {
+            tag: "序章",
+            title: "距离的难题",
+            text: "想象你想把一张纸扔过太平洋。根本不可能。<br>但如果你把纸包在一块石头上扔出去呢？",
+            analogy: "<b>纸</b> = 你的声音 (信息)。 <b>石头</b> = 载波 (Carrier)。",
+            task: "声波太懒了（低频），无线电波很强（高频）。我们需要让声音“骑”在无线电波上。",
+        },
+        s2: {
+            tag: "调制",
+            title: "AM: 幅度调制",
+            text: "“石头”（载波）保持速度不变（频率固定），但根据“纸”（信号）改变大小（振幅）。",
+            control1: "信号强度 (音量)",
+            control2: "载波频率",
+            note: "注意：波形的轮廓（包络线）就是我们的原始信号！",
+            eq: "带宽 = 2 × fm"
+        },
+        s3: {
+            tag: "调制",
+            title: "FM: 频率调制",
+            text: "现在，“石头”大小不变，但震动得忽快忽慢。<br>这就是 FM 音质好的原因——噪音通常表现为振幅尖峰，FM 完全无视它。",
+            control1: "信号强度 (频偏)",
+            note: "观察：信号高 = 波形压缩。信号低 = 波形拉伸。",
+            eq: "带宽 ≈ 200 kHz (很宽!)"
+        },
+        s4: {
+            tag: "数字化",
+            title: "ADC: 切片手术",
+            text: "电脑不懂波形，只懂数字。我们必须把波切碎。",
+            step1: "1. 采样 (Sampling): 切分时间 (横向)。",
+            step2: "2. 量化 (Quantization): 取整数值 (纵向)。",
+            control1: "采样率 (Hz)",
+            control2: "位深 (Bit Depth)",
+            eq: "分辨率 = 总范围 / 2^n"
+        },
+        s5: {
+            tag: "核心优势",
+            title: "数字再生的魔法",
+            text: "模拟信号会被噪音污染且无法复原。数字信号也会脏，但我们可以完美“清洗”它。",
+            btn: "清洗信号 (Regenerate)",
+            status_dirty: "状态: 含噪信号",
+            status_clean: "状态: 完美再生",
+            desc: "只要还能分清高低电平，就能重生成完美的方波。噪音直接归零。"
+        },
+        s6: {
+            tag: "计算",
+            title: "衰减 (Attenuation)",
+            text: "信号越远越弱。我们用 dB 来计算损失。",
+            control1: "距离 (km)",
+            calc: "总衰减 = ",
+            formula: "dB = 10 log(P_out / P_in)"
+        }
+    }
+};
+
+/**
+ * STATE MANAGEMENT
+ */
+let currentLang = 'zh';
+let currentSlideIdx = 0;
+const totalSlides = 6;
+let animationId; // For canvas loops
+
+function toggleLang() {
+    currentLang = currentLang === 'en' ? 'zh' : 'en';
+    renderSlide(currentSlideIdx);
+    document.getElementById('lang-toggle').innerText = currentLang === 'en' ? 'EN / 中' : '中 / EN';
+}
+
+function changeSlide(dir) {
+    const next = currentSlideIdx + dir;
+    if (next >= 0 && next < totalSlides) {
+        currentSlideIdx = next;
+        renderSlide(currentSlideIdx);
+    }
+}
+
+/**
+ * RENDER ENGINE
+ */
+function renderSlide(index) {
+    const root = document.getElementById('slider-root');
+    const txt = content[currentLang];
+    const key = `s${index + 1}`;
+    const data = txt[key];
+
+    // Update Progress
+    document.getElementById('progress').innerText = `${index + 1} / ${totalSlides}`;
+
+    let html = '';
+    
+    // Header
+    html += `<div class="slide active" style="background-color: ${getBgColor(index)}">`;
+    html += `<div><span class="tag">${data.tag}</span></div>`;
+    html += `<h1>${data.title}</h1>`;
+    html += `<p>${data.text}</p>`;
+
+    // Body (Specific Logic per Slide)
+    if (index === 0) { // Intro
+        html += `<div style="background:white; border:2px solid black; padding:15px; border-radius:10px;">${data.analogy}</div>`;
+        html += `<div style="flex:1; display:flex; align-items:center; justify-content:center;">
+                    <canvas id="c1"></canvas>
+                 </div>`;
+        html += `<p style="font-size:0.9rem; opacity:0.7">${data.task}</p>`;
+    } 
+    else if (index === 1) { // AM
+        html += `<canvas id="c2"></canvas>`;
+        html += `<div class="control-panel">
+                    <label>${data.control1}</label>
+                    <input type="range" min="0" max="100" value="50" id="am-sig">
+                    <label>${data.control2}</label>
+                    <input type="range" min="5" max="20" value="10" id="am-car">
+                    <p class="highlight">${data.note}</p>
+                 </div>`;
+        html += `<div style="margin-top:10px; font-weight:bold; color:#d32f2f">${data.eq}</div>`;
+    }
+    else if (index === 2) { // FM
+        html += `<canvas id="c3"></canvas>`;
+        html += `<div class="control-panel">
+                    <label>${data.control1}</label>
+                    <input type="range" min="0" max="100" value="50" id="fm-dev">
+                    <p class="highlight">${data.note}</p>
+                 </div>`;
+         html += `<div style="margin-top:10px; font-weight:bold; color:#d32f2f">${data.eq}</div>`;
+    }
+    else if (index === 3) { // ADC
+        html += `<canvas id="c4"></canvas>`;
+        html += `<div class="control-panel">
+                    <label>${data.control1}</label>
+                    <input type="range" min="2" max="50" value="10" id="adc-rate">
+                    <label>${data.control2}</label>
+                    <input type="range" min="2" max="16" value="4" id="adc-bit">
+                 </div>`;
+        html += `<p>${data.step1}<br>${data.step2}</p>`;
+        html += `<div class="highlight">${data.eq}</div>`;
+    }
+    else if (index === 4) { // Regeneration
+        html += `<canvas id="c5"></canvas>`;
+        html += `<div class="control-panel" style="text-align:center">
+                    <h3 id="regen-status">${data.status_dirty}</h3>
+                    <button class="btn-neo" style="width:100%" onclick="cleanSignal()">${data.btn}</button>
+                    <p>${data.desc}</p>
+                 </div>`;
+    }
+    else if (index === 5) { // Attenuation
+        html += `<div style="display:flex; height:100px; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <div style="font-size:2rem">📡</div>
+                    <div id="signal-bar" style="height:10px; background:black; width:100%; margin:0 10px; transition:0.2s"></div>
+                    <div style="font-size:2rem">🏠</div>
+                 </div>`;
+        html += `<div class="control-panel">
+                    <label>${data.control1}: <span id="dist-val">10</span> km</label>
+                    <input type="range" min="1" max="100" value="10" id="att-dist" oninput="updateAtt()">
+                    <h2>${data.calc} <span id="att-res" style="color:red">5</span> dB</h2>
+                    <p class="highlight">${data.formula}</p>
+                 </div>`;
+    }
+
+    html += `</div>`;
+    root.innerHTML = html;
+
+    // Initialize Canvas after DOM injection
+    setTimeout(() => {
+        if(index === 0) initHookCanvas();
+        if(index === 1) initAMCanvas();
+        if(index === 2) initFMCanvas();
+        if(index === 3) initADCCanvas();
+        if(index === 4) initRegenCanvas();
+        if(index === 5) updateAtt();
+    }, 50);
+}
+
+function getBgColor(idx) {
+    const colors = ['#fff', '#e3f2fd', '#fce4ec', '#f1f8e9', '#fff3e0', '#f3e5f5'];
+    return colors[idx % colors.length];
+}
+
+/**
+ * PHYSICS & CANVAS ENGINES
+ */
+
+// 1. Hook: Sine Wave
+function initHookCanvas() {
+    const ctx = document.getElementById('c1').getContext('2d');
+    let t = 0;
+    function draw() {
+        const w = ctx.canvas.width = ctx.canvas.clientWidth;
+        const h = ctx.canvas.height = ctx.canvas.clientHeight;
+        ctx.beginPath();
+        ctx.moveTo(0, h/2);
+        for(let x=0; x<w; x++) {
+            ctx.lineTo(x, h/2 + Math.sin(x*0.05 + t)*30);
+        }
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        t += 0.1;
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// 2. AM
+function initAMCanvas() {
+    const ctx = document.getElementById('c2').getContext('2d');
+    const inputSig = document.getElementById('am-sig');
+    const inputCar = document.getElementById('am-car');
+    let t = 0;
+    
+    function draw() {
+        if(!ctx.canvas) return;
+        const w = ctx.canvas.width = ctx.canvas.clientWidth;
+        const h = ctx.canvas.height = ctx.canvas.clientHeight;
+        const sigAmp = inputSig.value / 100; // 0 to 1
+        const carFreq = inputCar.value;
+
+        ctx.clearRect(0,0,w,h);
+        
+        // Draw Envelope (Ghost)
+        ctx.beginPath();
+        ctx.strokeStyle = '#ffb7b2';
+        ctx.lineWidth = 5;
+        for(let x=0; x<w; x++) {
+            const y = h/2 + (50 + 50*sigAmp*Math.sin(x*0.02 + t)); // Top envelope
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Draw Carrier
+        ctx.beginPath();
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        for(let x=0; x<w; x++) {
+            // AM Formula: (A_c + A_m * sin(wm*t)) * sin(wc*t)
+            const signal = Math.sin(x*0.02 + t);
+            const amplitude = 50 + (50 * sigAmp * signal); 
+            const carrier = Math.sin(x*(carFreq*0.01));
+            
+            ctx.lineTo(x, h/2 + amplitude * carrier);
+        }
+        ctx.stroke();
+        
+        t += 0.05;
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// 3. FM
+function initFMCanvas() {
+    const ctx = document.getElementById('c3').getContext('2d');
+    const inputDev = document.getElementById('fm-dev');
+    let t = 0;
+
+    function draw() {
+        if(!ctx.canvas) return;
+        const w = ctx.canvas.width = ctx.canvas.clientWidth;
+        const h = ctx.canvas.height = ctx.canvas.clientHeight;
+        const deviation = inputDev.value / 2; 
+
+        ctx.clearRect(0,0,w,h);
+        ctx.beginPath();
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+
+        for(let x=0; x<w; x++) {
+            // FM Logic: We integrate frequency to get phase, simplified here
+            // Base freq + change based on signal
+            // To visualize: sin(2pi * fc * t + B * sin(fm*t))
+            const fm = Math.sin(x*0.02 + t); // The signal
+            const phase = x*0.1 + deviation * Math.sin(x*0.02 + t); // Integrated phase approx
+            
+            ctx.lineTo(x, h/2 + 50 * Math.sin(phase * 2));
+        }
+        ctx.stroke();
+        t += 0.05;
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// 4. ADC
+function initADCCanvas() {
+    const ctx = document.getElementById('c4').getContext('2d');
+    const inRate = document.getElementById('adc-rate');
+    const inBit = document.getElementById('adc-bit');
+    
+    function draw() {
+        if(!ctx.canvas) return;
+        const w = ctx.canvas.width = ctx.canvas.clientWidth;
+        const h = ctx.canvas.height = ctx.canvas.clientHeight;
+        const rate = parseInt(inRate.value); // Step size X
+        const levels = parseInt(inBit.value); // Step size Y
+        
+        ctx.clearRect(0,0,w,h);
+
+        // Original Wave (Ghost)
+        ctx.beginPath();
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 2;
+        for(let x=0; x<w; x++) {
+            ctx.lineTo(x, h/2 + Math.sin(x*0.02)*80);
+        }
+        ctx.stroke();
+
+        // Digital Staircase
+        ctx.beginPath();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        
+        const stepY = (h/2) / (levels/2); // crude scale
+
+        for(let x=0; x<w; x+=rate) {
+            let trueY = Math.sin(x*0.02)*80;
+            // Quantize Y
+            let qY = Math.round(trueY / (160/levels)) * (160/levels);
+            
+            // Draw Step
+            ctx.lineTo(x, h/2 + qY);
+            ctx.lineTo(x+rate, h/2 + qY);
+        }
+        ctx.stroke();
+        
+        // Visualize Grid
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        for(let y=0; y<h; y+=(160/levels)) ctx.fillRect(0, h/2+y, w, 1);
+        for(let y=0; y<h; y+=(160/levels)) ctx.fillRect(0, h/2-y, w, 1);
+    }
+
+    inRate.oninput = draw;
+    inBit.oninput = draw;
+    draw();
+}
+
+// 5. Regeneration
+let isClean = false;
+function initRegenCanvas() {
+    isClean = false;
+    drawRegen();
+}
+
+function cleanSignal() {
+    isClean = true;
+    const txt = content[currentLang].s5;
+    document.getElementById('regen-status').innerText = txt.status_clean;
+    document.getElementById('regen-status').style.color = 'green';
+    drawRegen();
+}
+
+function drawRegen() {
+    const c = document.getElementById('c5');
+    if(!c) return;
+    const ctx = c.getContext('2d');
+    const w = c.width = c.clientWidth;
+    const h = c.height = c.clientHeight;
+    
+    ctx.clearRect(0,0,w,h);
+    ctx.beginPath();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = isClean ? '#00c853' : '#d50000'; // Green if clean, red if dirty
+
+    for(let x=0; x<w; x++) {
+        // Square wave logic
+        let base = Math.sin(x*0.05) > 0 ? -50 : 50;
+        
+        if(!isClean) {
+            // Add noise
+            base += (Math.random() - 0.5) * 40;
+        }
+
+        ctx.lineTo(x, h/2 + base);
+    }
+    ctx.stroke();
+    
+    if(!isClean) requestAnimationFrame(drawRegen);
+}
+
+// 6. Attenuation Calc
+function updateAtt() {
+    const dist = document.getElementById('att-dist').value;
+    const res = document.getElementById('att-res');
+    const bar = document.getElementById('signal-bar');
+    const distText = document.getElementById('dist-val');
+
+    // Assume 0.5 dB per km
+    const loss = (dist * 0.5).toFixed(1);
+    
+    distText.innerText = dist;
+    res.innerText = loss;
+    
+    // Visual logic: Opacity and thickness drop
+    let opacity = 1 - (loss / 60); 
+    if(opacity < 0.1) opacity = 0.1;
+    bar.style.opacity = opacity;
+    bar.style.transform = `scaleY(${opacity})`;
+}
+
+// Init
+renderSlide(0);
+
+</script>
+</body>
+</html>
