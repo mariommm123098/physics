@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理故事书：第19章 振动</title>
+    <style>
+        :root {
+            --bg-color: #FAFAFA;
+            --text-color: #111111;
+            --accent-purple: #E0BBE4;
+            --accent-green: #D2F5E3;
+            --accent-yellow: #FFF7BC;
+            --accent-blue: #D6E4FF;
+            --border-width: 3px;
+            --card-radius: 24px;
+            --font-main: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 6px;
+            background: #000;
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.2s;
+        }
+
+        /* 主容器 */
+        .story-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: white;
+            border: var(--border-width) solid black;
+            border-radius: var(--card-radius);
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 6px 6px 0px black; /* 硬阴影，新粗野风格 */
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 不同章节的配色 */
+        .theme-intro { background-color: white; }
+        .theme-shm { background-color: var(--accent-purple); }
+        .theme-kinematics { background-color: var(--accent-blue); }
+        .theme-energy { background-color: var(--accent-yellow); }
+        .theme-resonance { background-color: var(--accent-green); }
+
+        /* 排版 */
+        h1 {
+            font-size: 3.5rem;
+            line-height: 1;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            font-weight: 900;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            border-bottom: 3px solid black;
+            display: inline-block;
+            padding-bottom: 4px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .highlight {
+            background: black;
+            color: white;
+            padding: 2px 6px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        /* 公式展示块 */
+        .formula-block {
+            background: white;
+            border: 2px solid black;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            border-radius: 12px;
+        }
+
+        .formula-desc {
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            color: #666;
+            margin-top: 8px;
+            font-style: normal;
+        }
+
+        /* Canvas 容器 */
+        .canvas-wrapper {
+            width: 100%;
+            height: 200px;
+            background: white;
+            border: 2px solid black;
+            border-radius: 12px;
+            margin: 20px 0;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .canvas-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 5px;
+            pointer-events: none;
+        }
+
+        /* 互动按钮 */
+        .btn-interact {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin-top: 20px;
+        }
+
+        .btn-interact:active {
+            transform: scale(0.98);
+        }
+
+        /* 标签Tag */
+        .tag-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .tag {
+            font-size: 0.8rem;
+            border: 1.5px solid black;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: white;
+            font-weight: bold;
+        }
+
+        /* 页脚 */
+        .footer-spacer {
+            height: 100px;
+            text-align: center;
+            padding-top: 40px;
+            color: #999;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="story-container">
+        
+        <section class="card theme-intro visible">
+            <div class="tag-container">
+                <span class="tag">Chapter 19</span>
+                <span class="tag">Physics</span>
+            </div>
+            <h1>The Rhythm<br>of Nature</h1>
+            <p>从原子的微颤到高楼的摇摆，宇宙万物都在呼吸。我们称这种往复运动为——<strong>振动 (Oscillations)</strong>。</p>
+            <p style="font-size: 0.9rem; color: #666;">向下滚动，开启这段旅程 ↓</p>
+        </section>
+
+        <section class="card theme-intro">
+            <h2>01. 描述语言</h2>
+            <p>在研究“它为什么动”之前，我们需要学会如何描述“它动得怎么样”。</p>
+            
+            <div class="canvas-wrapper" id="canvas-circle">
+                <span class="canvas-label">交互演示：匀速圆周运动与振动</span>
+            </div>
+
+            <p>想象一个点在圆上跑，它的投影就在做振动。这让我们引出了最核心的变量：<strong>角频率 (Angular Frequency)</strong>。</p>
+            
+            <div class="formula-block">
+                ω = 2πf = 2π / T
+                <div class="formula-desc">ω: 快慢 (rad s⁻¹) | f: 频率 (Hz) | T: 周期 (s)</div>
+            </div>
+            
+            <p><strong>相位差 (Phase Difference)</strong>：就像两个人在走路。同相是步调一致，反相是你在左脚我在右脚。</p>
+        </section>
+
+        <section class="card theme-shm">
+            <h2>02. 灵魂定义</h2>
+            <p>不是所有乱动都叫 SHM。简谐运动 (Simple Harmonic Motion) 必须满足一个苛刻的契约。</p>
+            
+            <div class="formula-block">
+                a = -ω²x
+                <div class="formula-desc">负号是灵魂：位移向右，加速度必须向左。</div>
+            </div>
+
+            <p>这就像有一根<strong>隐形的橡皮筋</strong>（回复力），你离家（平衡位置）越远，它把你拉回家的力气就越大。</p>
+            <div class="tag-container">
+                <span class="tag">Check</span>
+                <span class="tag">a ∝ -x</span>
+            </div>
+        </section>
+
+        <section class="card theme-kinematics">
+            <h2>03. 时间的轨迹</h2>
+            <p>如果我们把时间的流逝展开，振动就画出了一条完美的波浪。</p>
+            
+            <div class="canvas-wrapper" id="canvas-wave">
+                <span class="canvas-label">动态演示：位移 x 随时间 t 的变化</span>
+            </div>
+
+            <div class="formula-block">
+                x = x₀ sin(ωt)
+                <div class="formula-desc">从平衡位置(x=0)开始计时</div>
+            </div>
+
+            <p><strong>速度大挑战</strong>：哪里最快？</p>
+            <ul>
+                <li>❌ 在两端（位移最大时），速度为 0。</li>
+                <li>✅ 在中心（平衡位置），速度最大！</li>
+            </ul>
+            <div class="formula-block" style="font-size: 1.2rem;">
+                v₀ = ωx₀
+            </div>
+        </section>
+
+        <section class="card theme-energy">
+            <h2>04. 能量守恒</h2>
+            <p>能量像水一样，在两个杯子间倒来倒去。</p>
+            <ul>
+                <li><strong>动能 (Ek)</strong>：中间最大，像个倒扣的碗。</li>
+                <li><strong>势能 (Ep)</strong>：两端最大，像个正放的碗。</li>
+            </ul>
+            
+            <div class="canvas-wrapper" id="canvas-energy">
+                <span class="canvas-label">能量交换：红色(Ek) vs 蓝色(Ep)</span>
+            </div>
+
+            <p class="highlight">考点警报：总能量 E ∝ x₀² (振幅的平方)</p>
+        </section>
+
+        <section class="card theme-resonance">
+            <h2>05. 现实与疯狂</h2>
+            <p><strong>阻尼 (Damping)</strong>：现实是残酷的，能量终会耗散。轻阻尼只是让摆动变小，而重阻尼则让物体像在蜂蜜里游动。</p>
+            <hr style="margin: 20px 0; border: 1px dashed black;">
+            
+            <h3>共振 (Resonance)</h3>
+            <p>当外来的<strong>驱动频率</strong>等于物体的<strong>固有频率</strong>时，奇迹（或灾难）发生了。</p>
+            
+            <div class="canvas-wrapper" id="canvas-resonance">
+                <span class="canvas-label">交互：点击按钮“推”它</span>
+            </div>
+
+            <button class="btn-interact" id="pushBtn">给它一个驱动力 (Push!)</button>
+            <p style="margin-top:10px; font-size: 0.9rem;">试着按一定节奏点击，看能否让振幅达到最大（模拟共振）。</p>
+        </section>
+
+        <div class="footer-spacer">
+            Created for Ben's Physics Review<br>
+            Use LaTeX for Exams | Use Intuition for Life
+        </div>
+
+    </div>
+
+    <script>
+        // --- 核心动画引擎 ---
+        
+        // 1. 简单的 Canvas 控制器类
+        class SimpleOscillator {
+            constructor(canvasId, type) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.type = type;
+                this.width = this.canvas.offsetWidth;
+                this.height = this.canvas.offsetHeight;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                
+                this.t = 0;
+                this.isRunning = false;
+                
+                // 物理参数
+                this.centerX = this.width / 2;
+                this.centerY = this.height / 2;
+                this.amplitude = 60;
+                this.omega = 0.05; // 模拟角频率
+                
+                // 共振专用
+                this.resonanceVel = 0;
+                this.resonancePos = 0;
+            }
+
+            start() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.animate();
+                }
+            }
+
+            stop() {
+                this.isRunning = false;
+            }
+
+            drawBall(x, y, color, radius=10) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+                this.ctx.fillStyle = color;
+                this.ctx.fill();
+                this.ctx.strokeStyle = "black";
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
+
+            drawSpring(startX, startY, endX, endY) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX, startY);
+                // 简单的锯齿线模拟弹簧
+                const segments = 10;
+                const dx = (endX - startX) / segments;
+                for (let i = 1; i <= segments; i++) {
+                    let offset = (i % 2 === 0) ? 5 : -5;
+                    if (i === segments) offset = 0;
+                    this.ctx.lineTo(startX + dx * i, endY + offset);
+                }
+                this.ctx.stroke();
+            }
+
+            animate() {
+                if (!this.isRunning) return;
+                
+                this.ctx.clearRect(0, 0, this.width, this.height);
+                this.t += 1;
+
+                if (this.type === 'circle') {
+                    // 圆周运动投影
+                    const x = this.amplitude * Math.cos(this.omega * this.t);
+                    const y = this.amplitude * Math.sin(this.omega * this.t);
+                    
+                    // 画参考圆
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.centerX, this.centerY, this.amplitude, 0, Math.PI*2);
+                    this.ctx.strokeStyle = "#eee";
+                    this.ctx.stroke();
+
+                    // 画旋转点
+                    this.drawBall(this.centerX + x, this.centerY + y, "#E0BBE4", 5);
+                    
+                    // 画下方投影振动 (SHM)
+                    this.drawSpring(0, this.height - 30, this.centerX + x, this.height - 30);
+                    this.drawBall(this.centerX + x, this.height - 30, "#000", 12);
+                    
+                    // 连线
+                    this.ctx.beginPath();
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.moveTo(this.centerX + x, this.centerY + y);
+                    this.ctx.lineTo(this.centerX + x, this.height - 30);
+                    this.ctx.strokeStyle = "#ccc";
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                }
+                else if (this.type === 'wave') {
+                    // 绘制正弦波
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, this.centerY);
+                    
+                    for (let i = 0; i < this.width; i++) {
+                        // 这是一个随时间移动的波: sin(kx - ωt)
+                        const yOffset = this.amplitude * Math.sin(0.05 * i - this.omega * this.t);
+                        this.ctx.lineTo(i, this.centerY + yOffset);
+                    }
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeStyle = "#D6E4FF"; // 蓝色波
+                    this.ctx.stroke(); // 绘制波的背景
+
+                     // 绘制当前点
+                    const currentY = this.amplitude * Math.sin(-this.omega * this.t);
+                    this.drawBall(this.width/2, this.centerY + currentY, "#000");
+                    
+                    // 绘制文字
+                    this.ctx.fillStyle = "black";
+                    this.ctx.fillText("x-t graph", 10, 30);
+                }
+                else if (this.type === 'energy') {
+                    // 能量柱状图
+                    const x = this.amplitude * Math.sin(this.omega * this.t);
+                    const maxE = this.amplitude * this.amplitude;
+                    const Ep = x * x;
+                    const Ek = maxE - Ep;
+                    
+                    // 绘制摆球
+                    this.drawBall(this.centerX + x, this.centerY, "#333");
+
+                    // 绘制能量条
+                    const barWidth = 40;
+                    const scale = 0.02;
+                    
+                    // Ek (Kinetic)
+                    this.ctx.fillStyle = "#FF6B6B";
+                    this.ctx.fillRect(this.width - 100, this.height - 20, barWidth, -Ek * scale);
+                    this.ctx.fillText("Ek", this.width - 95, this.height - 5);
+
+                    // Ep (Potential)
+                    this.ctx.fillStyle = "#4ECDC4";
+                    this.ctx.fillRect(this.width - 50, this.height - 20, barWidth, -Ep * scale);
+                    this.ctx.fillText("Ep", this.width - 45, this.height - 5);
+                }
+                else if (this.type === 'resonance') {
+                    // 简单的阻尼简谐运动模拟 + 驱动力
+                    // F = -kx - cv + F_drive
+                    const k = 0.01;
+                    const c = 0.02; // 阻尼
+                    const accel = (-k * this.resonancePos - c * this.resonanceVel);
+                    
+                    this.resonanceVel += accel;
+                    this.resonancePos += this.resonanceVel;
+
+                    // 绘制悬挂弹簧振子
+                    this.drawSpring(this.centerX, 0, this.centerX, this.centerY + this.resonancePos);
+                    this.drawBall(this.centerX, this.centerY + this.resonancePos, "#D2F5E3", 20);
+
+                    // 绘制中心线
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, this.centerY);
+                    this.ctx.lineTo(this.width, this.centerY);
+                    this.ctx.strokeStyle = "#eee";
+                    this.ctx.stroke();
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
+
+            // 共振专用方法：施加外力
+            push() {
+                this.resonanceVel += 3; 
+            }
+        }
+
+        // --- 逻辑控制 ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. 实例化 Canvas 动画
+            const animCircle = new SimpleOscillator('canvas-circle', 'circle');
+            const animWave = new SimpleOscillator('canvas-wave', 'wave');
+            const animEnergy = new SimpleOscillator('canvas-energy', 'energy');
+            const animResonance = new SimpleOscillator('canvas-resonance', 'resonance');
+
+            // 2. 互动按钮逻辑
+            const pushBtn = document.getElementById('pushBtn');
+            pushBtn.addEventListener('click', () => {
+                animResonance.push();
+                // 按钮点击反馈
+                pushBtn.style.transform = "scale(0.95)";
+                setTimeout(() => pushBtn.style.transform = "scale(1)", 100);
+            });
+
+            // 3. Scroll Observer (滚动监听器)
+            // 当卡片进入视野时，开始动画；离开时，停止动画（省电）
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        
+                        // 启动对应的 Canvas
+                        if(entry.target.querySelector('#canvas-circle')) animCircle.start();
+                        if(entry.target.querySelector('#canvas-wave')) animWave.start();
+                        if(entry.target.querySelector('#canvas-energy')) animEnergy.start();
+                        if(entry.target.querySelector('#canvas-resonance')) animResonance.start();
+
+                    } else {
+                        // 停止不在视野内的 Canvas
+                        if(entry.target.querySelector('#canvas-circle')) animCircle.stop();
+                        if(entry.target.querySelector('#canvas-wave')) animWave.stop();
+                        if(entry.target.querySelector('#canvas-energy')) animEnergy.stop();
+                        if(entry.target.querySelector('#canvas-resonance')) animResonance.stop();
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('.card').forEach(card => {
+                observer.observe(card);
+            });
+
+            // 4. 阅读进度条
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.body.offsetHeight - window.innerHeight;
+                const scrollPercent = (scrollTop / docHeight) * 100;
+                document.getElementById('progressBar').style.width = scrollPercent + '%';
+            });
+        });
+
+    </script>
+</body>
+</html>
