@@ -1,1 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHY_OSC_19 // INTERACTIVE</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --grid-color: #1a1a1a;
+            --primary: #00ff41; /* Hacker Green */
+            --secondary: #00f3ff; /* Cyan for Velocity */
+            --accent: #ff0055; /* Red for Acceleration */
+            --text-main: #e0e0e0;
+            --glass: rgba(0, 255, 65, 0.05);
+            --border: 2px solid var(--primary);
+        }
 
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace; /* Monospace for terminal feel */
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
+        h1 { border-bottom: 4px solid var(--primary); display: inline-block; padding-bottom: 10px; margin-bottom: 30px; }
+
+        /* --- LAYOUT --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* --- CANVAS SECTION --- */
+        .viz-panel {
+            border: var(--border);
+            background: #000;
+            box-shadow: 10px 10px 0px rgba(0, 255, 65, 0.2);
+            padding: 0;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            border-top: 1px dashed var(--primary);
+            background: var(--glass);
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: #333;
+            height: 5px;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            cursor: pointer;
+            border: 2px solid #000;
+        }
+
+        .legend {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--primary);
+            padding: 10px;
+            font-size: 0.8rem;
+        }
+        .dot { height: 10px; width: 10px; display: inline-block; margin-right: 5px; }
+
+        /* --- KNOWLEDGE CARDS --- */
+        .logs-section h2 { border-left: 10px solid var(--secondary); padding-left: 15px; }
+
+        details {
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        details[open] { border-color: var(--primary); }
+
+        summary {
+            padding: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        summary::after { content: '+'; font-size: 1.5rem; color: var(--primary); }
+        details[open] summary::after { content: '-'; }
+        
+        .card-content {
+            padding: 20px;
+            border-top: 1px solid #333;
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Highlighting */
+        .hl-math { color: var(--secondary); font-weight: bold; background: rgba(0, 243, 255, 0.1); padding: 2px 4px; }
+        .hl-term { color: var(--primary); text-decoration: underline; text-decoration-style: dotted; }
+        .hl-alert { color: var(--accent); border: 1px solid var(--accent); padding: 2px 5px; font-size: 0.9em; display: inline-block; margin-top: 5px;}
+
+        /* --- EXAM DRILL --- */
+        .drill-section { border: 2px solid var(--text-main); padding: 20px; }
+        .question-box { margin-bottom: 30px; }
+        .options { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        
+        .btn-opt {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 15px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .btn-opt:hover { border-color: var(--primary); color: var(--primary); }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+        .feedback.correct { border-color: var(--primary); background: rgba(0,255,65,0.1); color: var(--primary); }
+        .feedback.wrong { border-color: var(--accent); background: rgba(255,0,85,0.1); color: var(--accent); }
+
+        /* Responsive */
+        @media(max-width: 600px) {
+            .controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>PHY_CH19 // OSCILLATIONS</h1>
+        <p>SYSTEM STATUS: <span style="color:var(--primary)">ONLINE</span> // A-LEVEL REVISION MODULE</p>
+    </header>
+
+    <section class="viz-panel">
+        <div class="legend">
+            <div><span class="dot" style="background:var(--primary)"></span>x (Displacement)</div>
+            <div><span class="dot" style="background:var(--secondary)"></span>v (Velocity)</div>
+            <div><span class="dot" style="background:var(--accent)"></span>a (Acceleration)</div>
+        </div>
+        <canvas id="simCanvas"></canvas>
+        <div class="controls">
+            <div class="control-group">
+                <label>Frequency (f) <span id="val-f">1.0 Hz</span></label>
+                <input type="range" id="inp-f" min="0.2" max="3.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>Damping (b) <span id="val-d">0.0 (None)</span></label>
+                <input type="range" id="inp-d" min="0" max="1.5" step="0.05" value="0">
+            </div>
+            <div class="control-group">
+                <label>Amplitude (A) <span id="val-a">1.0 m</span></label>
+                <input type="range" id="inp-a" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group" style="align-self:end; text-align:right; font-size: 0.8em; color: #777;">
+                RELATIONSHIP: <br> v leads x by π/2 <br> a leads x by π
+            </div>
+        </div>
+    </section>
+
+    <section class="logs-section">
+        <h2>>> KNOWLEDGE_LOGS</h2>
+
+        <details open>
+            <summary>01. DEFINING SHM & EQUATIONS</summary>
+            <div class="card-content">
+                <p><strong>SHM Definition:</strong> Motion where acceleration is proportional to displacement and directed towards equilibrium.</p>
+                <p class="hl-math">a = -ω²x</p>
+                <p>The minus sign indicates the <span class="hl-term">Restoring Force</span> is opposite to displacement.</p>
+                <hr style="border-color:#333; border-style:dashed;">
+                <p><strong>Kinematics (Start at x=x₀):</strong></p>
+                <ul>
+                    <li>Displacement: <span class="hl-math">x = x₀ cos(ωt)</span></li>
+                    <li>Velocity: <span class="hl-math">v = -v₀ sin(ωt)</span> (v₀ = ωx₀)</li>
+                    <li>V-x Relationship: <span class="hl-math">v = ±ω√(x₀² - x²)</span></li>
+                </ul>
+                <div class="hl-alert">CAUTION: Set Calculator to RADIAN Mode!</div>
+            </div>
+        </details>
+
+        <details>
+            <summary>02. ENERGY IN SHM</summary>
+            <div class="card-content">
+                <p>Energy transforms between Kinetic (Ek) and Potential (Ep), but <span class="hl-term">Total Energy (Et)</span> remains constant (if undamped).</p>
+                <ul>
+                    <li><strong>Ek (Kinetic):</strong> Max at equilibrium (x=0). Graph is an inverted parabola.</li>
+                    <li><strong>Ep (Potential):</strong> Max at amplitude (x=x₀). Graph is a "U" parabola.</li>
+                    <li><strong>Total Energy:</strong> <span class="hl-math">Et = ½mω²x₀²</span></li>
+                </ul>
+                <p><strong>Key Exam Point:</strong> Total energy is proportional to <span class="hl-math">Amplitude squared (A²)</span>.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>03. DAMPING & RESONANCE</summary>
+            <div class="card-content">
+                <p><strong>Damping:</strong> Loss of energy due to resistive forces (friction/air resistance).</p>
+                <ul>
+                    <li><span style="color:var(--primary)">Light:</span> Oscillates with decreasing amplitude. Period T constant.</li>
+                    <li><span style="color:var(--secondary)">Critical:</span> Returns to equilibrium in shortest time. No oscillation. (e.g., Car suspension).</li>
+                    <li><span style="color:var(--accent)">Over:</span> Returns very slowly. No oscillation.</li>
+                </ul>
+                <hr style="border-color:#333; border-style:dashed;">
+                <p><strong>Resonance:</strong> Occurs when Driving Frequency = Natural Frequency.</p>
+                <p>Effect: Max Amplitude. Phase difference = π/2.</p>
+                <div class="hl-alert">GRAPH TIP: Higher damping = Lower peak & Shifted left</div>
+            </div>
+        </details>
+    </section>
+
+    <section class="drill-section">
+        <h2>>> SIMULATION_DRILL</h2>
+        
+        <div class="question-box" id="q1">
+            <p><strong>Q1:</strong> Which statement defines Simple Harmonic Motion?</p>
+            <div class="options">
+                <button class="btn-opt" onclick="check(this, false, 'Incorrect. SHM requires acceleration proportional to x.')">A. Acceleration is constant.</button>
+                <button class="btn-opt" onclick="check(this, true, 'CORRECT. The minus sign indicates direction towards equilibrium.')">B. Acceleration is proportional to -x.</button>
+                <button class="btn-opt" onclick="check(this, false, 'Incorrect. This describes velocity in some contexts, not the defining condition.')">C. Velocity is proportional to displacement.</button>
+            </div>
+            <div class="feedback"></div>
+        </div>
+
+        <div class="question-box" id="q2">
+            <p><strong>Q2:</strong> A particle performs SHM. When is the kinetic energy at its maximum?</p>
+            <div class="options">
+                <button class="btn-opt" onclick="check(this, false, 'Wrong. At max displacement, v=0, so Ek=0.')">A. At maximum displacement.</button>
+                <button class="btn-opt" onclick="check(this, true, 'CORRECT. At equilibrium (x=0), potential energy is min, so kinetic is max.')">B. At the equilibrium position.</button>
+                <button class="btn-opt" onclick="check(this, false, 'Wrong. Acceleration is max at the ends, where v=0.')">C. When acceleration is maximum.</button>
+            </div>
+            <div class="feedback"></div>
+        </div>
+
+        <div class="question-box" id="q3">
+            <p><strong>Q3:</strong> What is the phase difference between Displacement (x) and Acceleration (a)?</p>
+            <div class="options">
+                <button class="btn-opt" onclick="check(this, false, 'Incorrect. This is the phase diff between x and v.')">A. π/2 radians (90°)</button>
+                <button class="btn-opt" onclick="check(this, true, 'CORRECT. They are in antiphase. When x is +max, a is -max.')">B. π radians (180°)</button>
+                <button class="btn-opt" onclick="check(this, false, 'Incorrect. That would mean they are in phase.')">C. 2π radians (360°)</button>
+            </div>
+            <div class="feedback"></div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // --- PHYSICS ENGINE ---
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Config
+    let w, h;
+    let t = 0;
+    const history = { x: [], v: [], a: [] };
+    const maxHistory = 300; // Trail length
+
+    // User Params
+    let freq = 1.0;
+    let damping = 0.0;
+    let ampScale = 1.0;
+
+    function resize() {
+        w = canvas.width = canvas.offsetWidth;
+        h = canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Inputs
+    document.getElementById('inp-f').oninput = function() { freq = parseFloat(this.value); document.getElementById('val-f').innerText = freq + " Hz"; };
+    document.getElementById('inp-d').oninput = function() { damping = parseFloat(this.value); document.getElementById('val-d').innerText = damping.toFixed(2); };
+    document.getElementById('inp-a').oninput = function() { ampScale = parseFloat(this.value); document.getElementById('val-a').innerText = ampScale + " m"; };
+
+    function loop() {
+        requestAnimationFrame(loop);
+        
+        // Physics Calc
+        // omega = 2 * pi * f
+        let omega = 2 * Math.PI * freq;
+        let dt = 0.016; // approx 60fps
+        t += dt;
+
+        // Equation: x = A * e^(-bt) * cos(wt)
+        // Note: For visualization continuous loop, we don't strictly decay t to infinity, 
+        // we simulate decay based on a "local" amplitude or reset. 
+        // To make it look good for the user changing sliders, we just calculate instantaneous values based on phase.
+        
+        // Let's keep t running, but for damping effect in a loop, we cheat visually:
+        // We will just show the waveform shape based on current sliders.
+        // Actually, to show REAL damping, we need state.
+        
+        // VISUALIZER STATE
+        let A = 60 * ampScale; // Pixels
+        let dampingFactor = Math.exp(-damping * (t % 10)); // Reset decay every 10s for visual loop
+        if(damping === 0) dampingFactor = 1;
+
+        // Current Values
+        let x = A * dampingFactor * Math.cos(omega * t);
+        // Derivatives (Approx for viz)
+        let v = -A * omega * dampingFactor * Math.sin(omega * t); 
+        let a = -A * omega * omega * dampingFactor * Math.cos(omega * t);
+
+        // Normalize for Graph
+        let graphX = x;
+        let graphV = v / (omega || 1); // Scale v to fit
+        let graphA = a / ((omega*omega) || 1); // Scale a to fit
+
+        // Update History
+        history.x.push(graphX);
+        history.v.push(graphV);
+        history.a.push(graphA);
+        if(history.x.length > w) {
+            history.x.shift();
+            history.v.shift();
+            history.a.shift();
+        }
+
+        // --- DRAWING ---
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, w, h);
+
+        // Draw Grid
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+        ctx.stroke();
+
+        // Draw Graphs (Scrolling)
+        drawGraph(history.x, '#00ff41', 2); // Displacement
+        drawGraph(history.v, '#00f3ff', 1); // Velocity
+        drawGraph(history.a, '#ff0055', 1); // Acceleration
+
+        // Draw The Oscillator (Spring Mass) on the Left
+        let centerY = h/2;
+        let centerX = 100;
+        let massX = centerX;
+        let massY = centerY + x; // Vertical oscillator
+
+        // Spring
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        let coils = 10;
+        let springLen = massY;
+        for(let i=0; i<=coils; i++) {
+            ctx.lineTo(centerX + (i%2==0 ? -10 : 10), (springLen/coils)*i);
+        }
+        ctx.stroke();
+
+        // Mass
+        ctx.fillStyle = '#00ff41';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00ff41';
+        ctx.beginPath();
+        ctx.arc(massX, massY, 15, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Connection Line to Graph
+        ctx.strokeStyle = '#333';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(massX, massY);
+        ctx.lineTo(w, massY); // Project across
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawGraph(data, color, width) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        // Draw from right to left
+        for(let i = 0; i < data.length; i++) {
+            let val = data[data.length - 1 - i];
+            let plotX = w - i; // Scroll left
+            let plotY = (h/2) + val; // Center vertically
+            if(i===0) ctx.moveTo(plotX, plotY);
+            else ctx.lineTo(plotX, plotY);
+        }
+        ctx.stroke();
+    }
+
+    loop();
+
+    // --- DRILL LOGIC ---
+    function check(btn, isCorrect, explanation) {
+        let parent = btn.parentElement.parentElement;
+        let feedback = parent.querySelector('.feedback');
+        let allBtns = parent.querySelectorAll('.btn-opt');
+        
+        // Reset styles
+        allBtns.forEach(b => {
+            b.style.borderColor = '#555';
+            b.style.color = '#aaa';
+            b.disabled = true;
+        });
+
+        if(isCorrect) {
+            btn.style.borderColor = '#00ff41';
+            btn.style.color = '#00ff41';
+            feedback.className = 'feedback correct';
+            feedback.innerHTML = "<strong>[SUCCESS]</strong> " + explanation;
+        } else {
+            btn.style.borderColor = '#ff0055';
+            btn.style.color = '#ff0055';
+            feedback.className = 'feedback wrong';
+            feedback.innerHTML = "<strong>[ERROR]</strong> " + explanation;
+        }
+        feedback.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
