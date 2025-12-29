@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Physics Ch.19: Oscillations</title>
+    <title>Physics S1: Oscillations (Deep Dive)</title>
     <style>
         :root {
             --bg-color: #FAFAFA;
@@ -12,17 +12,13 @@
             --accent-green: #D2F5E3;
             --accent-yellow: #FFF7BC;
             --accent-blue: #D6E4FF;
+            --accent-red: #FFC8C8;
             --border-width: 3px;
             --card-radius: 20px;
             --font-main: 'Helvetica Neue', Arial, sans-serif;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--bg-color);
@@ -30,172 +26,94 @@
             font-family: var(--font-main);
             height: 100vh;
             width: 100vw;
-            overflow: hidden; /* 禁止滚动 */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
 
-        /* 顶部栏：语言切换 */
-        .top-bar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-
+        /* Top Bar */
+        .top-bar { position: absolute; top: 20px; right: 20px; z-index: 100; }
         .lang-btn {
-            background: black;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border-radius: 30px;
-            cursor: pointer;
+            background: black; color: white; border: none; padding: 8px 16px;
+            font-weight: bold; font-size: 0.9rem; border-radius: 30px; cursor: pointer;
             box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
         }
-        
-        .lang-btn:active {
-            transform: scale(0.95);
-        }
+        .lang-btn:active { transform: scale(0.95); }
 
-        /* 主舞台 */
+        /* Stage */
         .stage {
-            width: 90%;
-            max-width: 500px;
-            height: 70vh; /* 卡片高度 */
-            position: relative;
-            perspective: 1000px;
+            width: 90%; max-width: 550px; height: 75vh;
+            position: relative; perspective: 1000px;
         }
 
-        /* 卡片样式 */
+        /* Card Styles */
         .card {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            border: var(--border-width) solid black;
-            border-radius: var(--card-radius);
-            padding: 24px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; border: var(--border-width) solid black;
+            border-radius: var(--card-radius); padding: 24px;
             box-shadow: 8px 8px 0px black;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transform: translateX(100px) scale(0.9);
-            pointer-events: none;
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            overflow-y: auto; /* 只有内容超长时卡片内部才滚动 */
+            display: flex; flex-direction: column;
+            opacity: 0; transform: translateX(100px) scale(0.9);
+            pointer-events: none; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow-y: auto;
         }
 
-        .card.active {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-            pointer-events: auto;
-            z-index: 10;
-        }
+        .card.active { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; z-index: 10; }
+        .card.prev { opacity: 0; transform: translateX(-100px) scale(0.9); z-index: 5; }
 
-        .card.prev {
-            opacity: 0;
-            transform: translateX(-100px) scale(0.9);
-            z-index: 5;
-        }
-
-        /* 配色 */
-        .bg-intro { background-color: white; }
-        .bg-shm { background-color: var(--accent-purple); }
-        .bg-graph { background-color: var(--accent-blue); }
-        .bg-energy { background-color: var(--accent-yellow); }
-        .bg-res { background-color: var(--accent-green); }
-
-        /* 内容排版 */
-        h1 { font-size: 2.5rem; line-height: 1.1; margin-bottom: 15px; letter-spacing: -1px; }
-        h2 { font-size: 1.5rem; margin-bottom: 10px; border-bottom: 3px solid black; display: inline-block; }
-        p { font-size: 1rem; margin-bottom: 12px; line-height: 1.5; }
+        /* Typography */
+        h1 { font-size: 2.2rem; line-height: 1.1; margin-bottom: 15px; letter-spacing: -1px; }
+        h2 { font-size: 1.4rem; margin-bottom: 12px; border-bottom: 3px solid black; display: inline-block; padding-bottom: 5px;}
+        h3 { font-size: 1.1rem; margin-top: 15px; font-weight: 800; color: #444; }
+        p { font-size: 1rem; margin-bottom: 12px; line-height: 1.6; color: #333; }
         
-        .formula-box {
-            background: white;
-            border: 2px solid black;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: center;
-            font-family: 'Times New Roman', serif;
-            font-size: 1.3rem;
-            font-style: italic;
-            border-radius: 12px;
-            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        /* Special Blocks */
+        .concept-box {
+            background: #f4f4f4; border-left: 5px solid black; padding: 12px; margin: 10px 0; font-size: 0.95rem;
         }
+        .formula-box {
+            background: white; border: 2px solid black; padding: 15px; margin: 15px 0;
+            text-align: center; font-family: 'Times New Roman', serif; font-size: 1.4rem;
+            font-style: italic; border-radius: 12px; box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+        .formula-explain { font-size: 0.85rem; color: #666; margin-top: 5px; font-family: var(--font-main); font-style: normal; }
 
         /* Canvas */
         .canvas-container {
-            width: 100%;
-            height: 180px;
-            background: white;
-            border: 2px solid black;
-            border-radius: 12px;
-            margin: 10px 0;
-            position: relative;
+            width: 100%; height: 200px; background: white;
+            border: 2px solid black; border-radius: 12px; margin: 15px 0; position: relative;
         }
         canvas { width: 100%; height: 100%; display: block; }
-        .canvas-tag {
-            position: absolute;
-            top: 5px; 
-            left: 5px;
-            background: rgba(255,255,255,0.9);
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            border: 1px solid black;
-            border-radius: 4px;
+        .interactive-hint {
+            position: absolute; bottom: 5px; right: 5px; font-size: 0.7rem; 
+            background: rgba(0,0,0,0.1); padding: 2px 5px; border-radius: 4px; pointer-events: none;
         }
 
-        /* 底部导航栏 */
-        .nav-bar {
-            margin-top: 30px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            z-index: 100;
-        }
-
+        /* Navigation */
+        .nav-bar { margin-top: 25px; display: flex; gap: 20px; align-items: center; z-index: 100; }
         .nav-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid black;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 4px 4px 0px black;
-            transition: transform 0.1s;
+            width: 55px; height: 55px; border-radius: 50%; background: white;
+            border: 3px solid black; font-size: 1.5rem; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; box-shadow: 4px 4px 0px black; transition: transform 0.1s;
         }
+        .nav-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px black; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; transform: translate(4px, 4px); }
+        .page-indicator { font-weight: bold; font-size: 1.1rem; }
 
-        .nav-btn:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px black;
-        }
-
-        .nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: translate(4px, 4px);
-        }
-        
-        .page-indicator {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        /* 语言显示控制 */
+        /* Bilingual */
         [lang="en"] { display: none; }
         body.lang-en [lang="en"] { display: block; }
         body.lang-en [lang="zh"] { display: none; }
+
+        /* Themes */
+        .theme-white { background-color: white; }
+        .theme-blue { background-color: var(--accent-blue); }
+        .theme-yellow { background-color: var(--accent-yellow); }
+        .theme-purple { background-color: var(--accent-purple); }
+        .theme-green { background-color: var(--accent-green); }
+        .theme-red { background-color: var(--accent-red); }
 
     </style>
 </head>
@@ -206,130 +124,208 @@
     </div>
 
     <div class="stage">
-        
-        <div class="card active bg-intro" data-index="0">
-            <span style="font-size: 0.9rem; font-weight:bold; margin-bottom:10px;">Chapter 19</span>
-            <h1 lang="zh">自然的<br>旋律</h1>
-            <h1 lang="en">The Rhythm<br>of Nature</h1>
+
+        <div class="card active theme-white" data-index="0">
+            <span style="font-size: 0.9rem; font-weight:bold; margin-bottom:10px;">Part 1: The Basics</span>
+            <h1 lang="zh">万物皆振动</h1>
+            <h1 lang="en">Everything Oscillates</h1>
+            <p lang="zh">在开始公式推导前，我们需要先统一“语言”。物理学家有一套专门描述“转圈”和“摆动”的术语。</p>
+            <p lang="en">Before diving into formulas, let's agree on the "language". Physicists have specific terms for spinning and swinging.</p>
             
-            <p lang="zh">从原子的微颤到高楼的摇摆，宇宙万物都在呼吸。</p>
-            <p lang="en">From the vibration of atoms to the swaying of skyscrapers, the universe is breathing.</p>
+            <div class="concept-box">
+                <strong lang="zh">目标：</strong> <span lang="zh">理解为什么我们要用圆来描述直线运动。</span><br>
+                <strong lang="en">Goal:</strong> <span lang="en">Understand why we use circles to describe straight-line motion.</span>
+            </div>
+            <p lang="zh" style="margin-top:auto; color:#666;">点击下方右箭头开始学习 →</p>
+            <p lang="en" style="margin-top:auto; color:#666;">Tap the right arrow to start →</p>
+        </div>
+
+        <div class="card theme-yellow" data-index="1">
+            <h2 lang="zh">01. 被忽视的陷阱：弧度</h2>
+            <h2 lang="en">01. The Trap: Radians</h2>
             
-            <p lang="zh">我们将这种往复运动称为——<br><strong>振动 (Oscillations)</strong>。</p>
-            <p lang="en">We call this back-and-forth motion —<br><strong>Oscillations</strong>.</p>
-            
-            <div style="margin-top:auto; text-align:center; font-size:0.8rem; color:#666;">
-                <span lang="zh">点击下方箭头开始 →</span>
-                <span lang="en">Tap arrow to start →</span>
+            <p lang="zh"><strong>这是本章做题错误率最高的地方。</strong></p>
+            <p lang="en"><strong>This is the #1 source of errors.</strong></p>
+
+            <p lang="zh">在日常生活，我们用 360° (Degrees)。<br>但在微积分和高级物理中，数学公式只认 <strong>2π (Radians)</strong>。</p>
+            <p lang="en">Daily life uses 360° (Degrees).<br>But physics formulas only accept <strong>2π (Radians)</strong>.</p>
+
+            <div class="canvas-container" id="c-rad">
+                <canvas></canvas>
+                <div class="interactive-hint">360° = 2π rad ≈ 6.28</div>
+            </div>
+
+            <div class="concept-box">
+                <span lang="zh">⚠️ <strong>考试金律：</strong> 只要看到 sin/cos 里面是 t (时间)，计算器必须调成 <strong>RAD 模式</strong>！</span>
+                <span lang="en">⚠️ <strong>Golden Rule:</strong> If you see 't' inside sin/cos, set calculator to <strong>RAD Mode</strong>!</span>
             </div>
         </div>
 
-        <div class="card bg-intro" data-index="1">
-            <h2 lang="zh">01. 描述语言</h2>
-            <h2 lang="en">01. Terminology</h2>
+        <div class="card theme-blue" data-index="2">
+            <h2 lang="zh">02. 影子的魔法</h2>
+            <h2 lang="en">02. Shadow Model</h2>
             
-            <p lang="zh">描述振动最核心的变量是<strong>角频率 (ω)</strong>。</p>
-            <p lang="en">The key variable to describe oscillation is <strong>Angular Frequency (ω)</strong>.</p>
-            
-            <div class="canvas-container" id="c-circle">
+            <p lang="zh">怎么研究弹簧的上下运动？太快了看不清。<br>物理学家发现了一个绝妙的巧合：</p>
+            <p lang="en">How to study a spring? It moves too fast.<br>Physicists found a brilliant coincidence:</p>
+
+            <p lang="zh"><strong>“匀速圆周运动的投影（影子），就是简谐运动。”</strong></p>
+            <p lang="en"><strong>"The shadow of circular motion IS simple harmonic motion."</strong></p>
+
+            <div class="canvas-container" id="c-shadow">
                 <canvas></canvas>
-                <div class="canvas-tag">Projection of Circular Motion</div>
+                <div class="interactive-hint">Circle rotates, Shadow oscillates</div>
             </div>
+
+            <p lang="zh">所以，我们很多公式都借用了圆的公式。</p>
+            <p lang="en">So, we borrow formulas from the circle.</p>
+        </div>
+
+        <div class="card theme-blue" data-index="3">
+            <h2 lang="zh">03. 它是怎么变出来的？</h2>
+            <h2 lang="en">03. Where does ω come from?</h2>
+            
+            <p lang="zh">我们借用圆的速度，叫它 <strong>角频率 (Angular Frequency)</strong>，符号是希腊字母 $\omega$ (omega)。</p>
+            <p lang="en">We borrow the circle's speed, calling it <strong>Angular Frequency</strong>, symbol $\omega$ (omega).</p>
+
+            <p lang="zh">速度 = 距离 / 时间。在圆里：</p>
+            <p lang="en">Speed = Distance / Time. In a circle:</p>
+
+            <div class="formula-box">
+                ω = 2π / T
+                <div class="formula-explain">
+                    <span lang="zh">跑一圈的距离是 2π，花的时间是 T</span>
+                    <span lang="en">Distance is 2π, Time taken is T</span>
+                </div>
+            </div>
+
+            <p lang="zh">或者用频率 f (每秒转几圈)：</p>
+            <p lang="en">Or using frequency f (turns per second):</p>
+            <div class="formula-box" style="font-size: 1.2rem;">
+                ω = 2πf
+            </div>
+        </div>
+
+        <div class="card theme-purple" data-index="4">
+            <h2 lang="zh">04. 物理本源：力</h2>
+            <h2 lang="en">04. The Physics: Force</h2>
+            
+            <p lang="zh">现在回到现实。是什么让物体振动？是<strong>回复力 (Restoring Force)</strong>。</p>
+            <p lang="en">Back to reality. What causes oscillation? <strong>Restoring Force</strong>.</p>
+            
+            <h3 lang="zh">第一步：胡克定律</h3>
+            <h3 lang="en">Step 1: Hooke's Law</h3>
+            <p lang="zh">弹簧被拉得越长 ($x$)，想缩回去的力 ($F$) 就越大。</p>
+            <p lang="en">The more you stretch ($x$), the harder it pulls back ($F$).</p>
             
             <div class="formula-box">
-                ω = 2πf = 2π / T
+                F = -k x
+                <div class="formula-explain">
+                    <span lang="zh">负号表示方向相反：位移向右，力向左。</span>
+                    <span lang="en">Minus sign means opposite direction.</span>
+                </div>
             </div>
-            
-            <p lang="zh"><strong>相位差 (Phase)</strong>：描述步调是否一致。同相(In phase)是一起走，反相(Antiphase)是你左我右。</p>
-            <p lang="en"><strong>Phase Difference</strong>: Tells if steps are synced. In phase = together; Antiphase = opposite.</p>
         </div>
 
-        <div class="card bg-shm" data-index="2">
-            <h2 lang="zh">02. 简谐运动 SHM</h2>
-            <h2 lang="en">02. Defining SHM</h2>
+        <div class="card theme-purple" data-index="5">
+            <h2 lang="zh">05. 见证公式的诞生</h2>
+            <h2 lang="en">05. Birth of the Formula</h2>
             
-            <p lang="zh">不是所有振动都叫 SHM。它必须满足一个苛刻的契约：</p>
-            <p lang="en">Not all oscillations are SHM. It must satisfy a strict rule:</p>
-            
+            <p lang="zh">我们要把牛顿和胡克结合起来。</p>
+            <p lang="en">Let's combine Newton and Hooke.</p>
+
+            <ul style="margin-left: 20px; font-size: 0.9rem; line-height: 1.8;">
+                <li><strong lang="zh">牛顿：</strong><strong lang="en">Newton:</strong> $F = ma$</li>
+                <li><strong lang="zh">胡克：</strong><strong lang="en">Hooke:</strong> $F = -kx$</li>
+            </ul>
+
+            <p lang="zh" style="margin-top:10px;">连立它们：$ma = -kx$ <br> 移项得到：$a = -(k/m)x$</p>
+            <p lang="en" style="margin-top:10px;">Combine: $ma = -kx$ <br> Rearrange: $a = -(k/m)x$</p>
+
+            <div class="concept-box">
+                <span lang="zh">为了简洁，物理学家令 $k/m = \omega^2$。不要问为什么是平方，这是为了后面开根号方便。</span>
+                <span lang="en">For simplicity, physicists let $k/m = \omega^2$.</span>
+            </div>
+
             <div class="formula-box">
                 a = -ω²x
             </div>
-            
-            <p lang="zh"><strong>负号的意义</strong>：加速度 a 的方向永远指向平衡位置（与位移 x 相反）。<br>就像有一根隐形的橡皮筋把你拉回家。</p>
-            <p lang="en"><strong>The Minus Sign</strong>: Acceleration 'a' is always directed towards equilibrium (opposite to 'x').<br>Like an invisible rubber band pulling you home.</p>
+            <p lang="zh" style="text-align:center; font-size:0.9rem;">这就是简谐运动的定义式！</p>
         </div>
 
-        <div class="card bg-graph" data-index="3">
-            <h2 lang="zh">03. 图像与公式</h2>
-            <h2 lang="en">03. Graphs & Eq</h2>
+        <div class="card theme-blue" data-index="6">
+            <h2 lang="zh">06. 为什么是 Sin/Cos?</h2>
+            <h2 lang="en">06. Why Sin/Cos?</h2>
             
-            <p lang="zh">时间流逝，振动画出了完美的波浪。</p>
-            <p lang="en">Over time, oscillation traces a perfect wave.</p>
+            <p lang="zh">还记得那个圆的投影吗？</p>
+            <p lang="en">Remember the circle's shadow?</p>
             
             <div class="canvas-container" id="c-wave">
                 <canvas></canvas>
-                <div class="canvas-tag">x-t Graph</div>
+                <div class="interactive-hint">Tracing the position</div>
             </div>
-            
-            <div class="formula-box" style="font-size:1.1rem;">
-                x = x₀ sin(ωt) <br>
-                v₀ = ωx₀ (Max Velocity)
-            </div>
-            
-            <p lang="zh" style="font-size:0.9rem">提示：在平衡位置(x=0)时速度最大；在两端时速度为0。</p>
-            <p lang="en" style="font-size:0.9rem">Note: Velocity is max at equilibrium (x=0) and zero at extremes.</p>
-        </div>
 
-        <div class="card bg-energy" data-index="4">
-            <h2 lang="zh">04. 能量守恒</h2>
-            <h2 lang="en">04. Energy</h2>
-            
-            <p lang="zh">总能量在动能(Ek)和势能(Ep)之间倒来倒去。</p>
-            <p lang="en">Total energy swaps between Kinetic (Ek) and Potential (Ep).</p>
-            
-            <div class="canvas-container" id="c-energy">
-                <canvas></canvas>
-                <div class="canvas-tag">Red: Ek | Blue: Ep</div>
-            </div>
-            
-            <p lang="zh"><strong>重要考点</strong>：总能量与振幅的平方成正比。</p>
-            <p lang="en"><strong>Exam Tip</strong>: Total Energy is proportional to Amplitude squared.</p>
+            <p lang="zh">如果你从平衡位置（中心）开始计时，你的位置图就像是把圆展开：</p>
+            <p lang="en">If you start timing from the center, your position graph unrolls the circle:</p>
+
             <div class="formula-box">
-                E ∝ x₀²
+                x = x₀ sin(ωt)
             </div>
+            <p lang="zh">如果是从最大处（最右边）开始释放呢？那就是 $cos$。</p>
+            <p lang="en">If released from max displacement? Then it's $cos$.</p>
         </div>
 
-        <div class="card bg-res" data-index="5">
-            <h2 lang="zh">05. 共振</h2>
-            <h2 lang="en">05. Resonance</h2>
+        <div class="card theme-red" data-index="7">
+            <h2 lang="zh">07. 速度的直觉</h2>
+            <h2 lang="en">07. Intuition of Velocity</h2>
             
-            <p lang="zh">当<strong>驱动频率 ≈ 固有频率</strong>时，振幅达到最大。</p>
-            <p lang="en">When <strong>Driving Freq ≈ Natural Freq</strong>, amplitude hits maximum.</p>
+            <p lang="zh">荡秋千时，哪里最快？哪里最慢？</p>
+            <p lang="en">On a swing, where is it fastest? Slowest?</p>
+
+            <ul>
+                <li lang="zh"><strong>最低点（平衡位置）：</strong> 速度最快！</li>
+                <li lang="en"><strong>Bottom (Equilibrium):</strong> Max Speed!</li>
+                <li lang="zh"><strong>最高点（两端）：</strong> 瞬间静止 (v=0)。</li>
+                <li lang="en"><strong>Top (Ends):</strong> Momentary stop (v=0).</li>
+            </ul>
+
+            <div class="formula-box">
+                v₀ = ωx₀
+                <div class="formula-explain">最大速度公式 (Max Velocity)</div>
+            </div>
             
+            <p lang="zh">推导原理：其实就是对位移 $x$ 求导（斜率）。</p>
+            <p lang="en">Derivation: It's the derivative (slope) of $x$.</p>
+        </div>
+
+        <div class="card theme-green" data-index="8">
+            <h2 lang="zh">08. 终章：共振</h2>
+            <h2 lang="en">08. Finale: Resonance</h2>
+            
+            <p lang="zh">每个物体都有自己喜欢的节奏，叫<strong>固有频率</strong>。</p>
+            <p lang="en">Everything has a favorite rhythm, called <strong>Natural Frequency</strong>.</p>
+
+            <p lang="zh">如果你推它的节奏（驱动频率）正好等于它的固有频率，它就会“疯”掉。</p>
+            <p lang="en">If you push it at that exact rhythm (Driving Freq), it goes crazy.</p>
+
             <div class="canvas-container" id="c-res">
                 <canvas></canvas>
-                <div class="canvas-tag">Interaction Zone</div>
+                <div class="interactive-hint">Click button to push</div>
             </div>
-            
             <button id="pushBtn" style="width:100%; padding:15px; background:black; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-                <span lang="zh">给它一推 (Push!)</span>
-                <span lang="en">Push It!</span>
+                <span lang="zh">推一下 (Push)</span><span lang="en">Push</span>
             </button>
-            
-            <p lang="zh" style="margin-top:10px; font-size:0.8rem">试着按节奏点击，制造共振！</p>
-            <p lang="en" style="margin-top:10px; font-size:0.8rem">Tap rhythmically to create resonance!</p>
         </div>
 
     </div>
 
     <div class="nav-bar">
         <button class="nav-btn" id="prevBtn" disabled>&lt;</button>
-        <span class="page-indicator" id="pageInd">1 / 6</span>
+        <span class="page-indicator" id="pageInd">1 / 9</span>
         <button class="nav-btn" id="nextBtn">&gt;</button>
     </div>
 
     <script>
-        // --- 逻辑控制 ---
+        // --- Core Logic ---
         const slides = document.querySelectorAll('.card');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
@@ -338,7 +334,7 @@
         let currentIndex = 0;
         let isEn = false;
 
-        // 语言切换
+        // Language Toggle
         langBtn.addEventListener('click', () => {
             isEn = !isEn;
             document.body.classList.toggle('lang-en', isEn);
@@ -346,13 +342,12 @@
             langBtn.textContent = isEn ? "切换中文" : "Switch to EN";
         });
 
-        // 翻页逻辑
+        // Pagination Logic
         function updateSlide(index) {
             slides.forEach((slide, i) => {
                 slide.classList.remove('active', 'prev');
                 if (i === index) {
                     slide.classList.add('active');
-                    // 激活当前页的Canvas
                     const canvas = slide.querySelector('canvas');
                     if(canvas) startCanvasAnimation(slide.dataset.index, canvas);
                 } else if (i < index) {
@@ -366,102 +361,111 @@
             currentIndex = index;
         }
 
-        nextBtn.addEventListener('click', () => {
-            if (currentIndex < slides.length - 1) updateSlide(currentIndex + 1);
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (currentIndex > 0) updateSlide(currentIndex - 1);
-        });
-
-        // 键盘支持
+        nextBtn.addEventListener('click', () => { if (currentIndex < slides.length - 1) updateSlide(currentIndex + 1); });
+        prevBtn.addEventListener('click', () => { if (currentIndex > 0) updateSlide(currentIndex - 1); });
+        
+        // Keyboard support
         document.addEventListener('keydown', (e) => {
             if(e.key === 'ArrowRight') nextBtn.click();
             if(e.key === 'ArrowLeft') prevBtn.click();
         });
 
-        // --- Canvas 动画引擎 (简化版) ---
-        const oscillators = {};
+        // --- Improved Physics Engine ---
+        const animators = {};
 
         function startCanvasAnimation(index, canvas) {
-            // 停止之前的动画以节省资源
-            Object.values(oscillators).forEach(osc => osc.running = false);
-
-            if (!oscillators[index]) {
-                oscillators[index] = createOscillator(index, canvas);
+            Object.values(animators).forEach(a => a.running = false); // Stop others
+            if (!animators[index]) {
+                animators[index] = createScene(index, canvas);
             }
-            oscillators[index].running = true;
-            oscillators[index].animate();
+            animators[index].running = true;
+            animators[index].animate();
         }
 
-        function createOscillator(index, canvas) {
+        function createScene(index, canvas) {
             const ctx = canvas.getContext('2d');
-            let width = canvas.offsetWidth;
-            let height = canvas.offsetHeight;
-            canvas.width = width;
-            canvas.height = height;
-
+            let w = canvas.offsetWidth;
+            let h = canvas.offsetHeight;
+            canvas.width = w; canvas.height = h;
+            
             let t = 0;
             let type = '';
-            if(index == 1) type = 'circle';
-            if(index == 3) type = 'wave';
-            if(index == 4) type = 'energy';
-            if(index == 5) type = 'res';
+            
+            // Map index to scene type
+            if(index == 1) type = 'rad';
+            if(index == 2) type = 'shadow';
+            if(index == 6) type = 'wave';
+            if(index == 8) type = 'res';
 
-            // 共振物理参数
+            // Physics Vars
             let resPos = 0, resVel = 0;
 
             return {
                 running: true,
-                push: function() { resVel += 4; }, // 外部推力接口
+                push: function() { resVel += 4; },
                 animate: function() {
                     if(!this.running) return;
-                    ctx.clearRect(0, 0, width, height);
-                    t += 0.05;
+                    ctx.clearRect(0,0,w,h);
+                    t += 0.04;
+                    const cx = w/2; const cy = h/2;
 
-                    const cx = width / 2;
-                    const cy = height / 2;
-                    const amp = 40;
-
-                    if(type === 'circle') {
-                        // 圆与投影
-                        const x = amp * Math.cos(t);
-                        const y = amp * Math.sin(t);
-                        ctx.beginPath(); ctx.arc(cx, cy, amp, 0, 7); ctx.strokeStyle='#eee'; ctx.stroke(); // Orbit
+                    if(type === 'rad') {
+                        // Visualizing Radians vs Degrees
+                        const r = 60;
+                        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.strokeStyle='#ddd'; ctx.stroke();
                         
-                        // Ball
-                        ctx.beginPath(); ctx.arc(cx + x, cy + y, 6, 0, 7); ctx.fillStyle='#E0BBE4'; ctx.fill(); ctx.stroke();
+                        // Moving arm
+                        let ang = t % (Math.PI*2);
+                        ctx.beginPath(); ctx.moveTo(cx, cy); 
+                        ctx.lineTo(cx + r*Math.cos(ang), cy + r*Math.sin(ang));
+                        ctx.strokeStyle='black'; ctx.lineWidth=2; ctx.stroke();
                         
-                        // Projection
-                        ctx.beginPath(); ctx.moveTo(cx+x, cy+y); ctx.lineTo(cx+x, height-20); ctx.setLineDash([4,4]); ctx.strokeStyle='#ccc'; ctx.stroke(); ctx.setLineDash([]);
-                        ctx.beginPath(); ctx.arc(cx + x, height-20, 10, 0, 7); ctx.fillStyle='#111'; ctx.fill();
+                        // Text
+                        ctx.fillStyle = 'black';
+                        ctx.font = '16px Arial';
+                        ctx.fillText(((ang * 180 / Math.PI)|0) + "°", cx - 15, cy + 90);
+                        ctx.fillText(ang.toFixed(2) + " rad", cx - 25, cy + 110);
                     }
+
+                    else if(type === 'shadow') {
+                        const r = 50;
+                        let x = r * Math.cos(t);
+                        let y = r * Math.sin(t);
+                        
+                        // Circle Top
+                        ctx.beginPath(); ctx.arc(cx, cy - 40, r, 0, 7); ctx.strokeStyle='#eee'; ctx.stroke();
+                        ctx.beginPath(); ctx.arc(cx+x, cy-40+y, 6, 0, 7); ctx.fillStyle='#E0BBE4'; ctx.fill();
+                        
+                        // Light source lines
+                        ctx.beginPath(); ctx.moveTo(cx+x, cy-40+y); ctx.lineTo(cx+x, cy+60); 
+                        ctx.setLineDash([4,4]); ctx.strokeStyle='#ccc'; ctx.stroke(); ctx.setLineDash([]);
+                        
+                        // Shadow (Oscillation)
+                        ctx.beginPath(); ctx.moveTo(0, cy+60); ctx.lineTo(w, cy+60); ctx.strokeStyle='#333'; ctx.stroke();
+                        ctx.beginPath(); ctx.arc(cx+x, cy+60, 10, 0, 7); ctx.fillStyle='black'; ctx.fill();
+                        
+                        ctx.fillText("Shadow (x)", cx+x-20, cy+90);
+                    }
+
                     else if(type === 'wave') {
+                        // Tracing the sine wave
+                        const amp = 40;
                         ctx.beginPath();
-                        for(let i=0; i<width; i++) {
-                            ctx.lineTo(i, cy + amp * Math.sin(i*0.05 - t));
+                        ctx.moveTo(0, cy);
+                        for(let i=0; i<w; i++) {
+                            // Graph history moving left
+                            // x = t, y = sin(t)
+                            // We simulate scrolling by offsetting phase
+                            let val = amp * Math.sin((i*0.05) - t*2); 
+                            ctx.lineTo(i, cy + val);
                         }
                         ctx.strokeStyle = '#D6E4FF'; ctx.lineWidth=3; ctx.stroke();
-                        ctx.lineWidth=1;
                         
-                        // Point
-                        let py = cy + amp * Math.sin(cx*0.05 - t);
-                        ctx.beginPath(); ctx.arc(cx, py, 8, 0, 7); ctx.fillStyle='#111'; ctx.fill();
+                        // The Axis line
+                        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); 
+                        ctx.strokeStyle='#eee'; ctx.lineWidth=1; ctx.stroke();
                     }
-                    else if(type === 'energy') {
-                        let x = amp * Math.sin(t);
-                        let v = amp * Math.cos(t); // velocity proxy
-                        
-                        // Ball
-                        ctx.beginPath(); ctx.arc(cx + x, cy, 10, 0, 7); ctx.fillStyle='#333'; ctx.fill();
-                        
-                        // Bars
-                        let Ek = (amp*amp - x*x) * 0.04;
-                        let Ep = (x*x) * 0.04;
-                        
-                        ctx.fillStyle='#FF6B6B'; ctx.fillRect(width-60, height-10, 20, -Ek); // Red Ek
-                        ctx.fillStyle='#4ECDC4'; ctx.fillRect(width-30, height-10, 20, -Ep); // Blue Ep
-                    }
+
                     else if(type === 'res') {
                         // Spring simulation
                         let k = 0.05, c = 0.02;
@@ -469,8 +473,18 @@
                         resVel += acc;
                         resPos += resVel;
                         
-                        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, cy + resPos); ctx.strokeStyle='#333'; ctx.stroke();
-                        ctx.beginPath(); ctx.arc(cx, cy + resPos, 15, 0, 7); ctx.fillStyle='#D2F5E3'; ctx.fill(); ctx.stroke();
+                        // Draw Spring
+                        ctx.beginPath(); ctx.moveTo(cx, 20); ctx.lineTo(cx, cy + resPos); 
+                        ctx.strokeStyle='#333'; ctx.lineWidth=2; ctx.stroke();
+                        
+                        // Draw Mass
+                        ctx.beginPath(); ctx.arc(cx, cy + resPos, 15, 0, 7); 
+                        ctx.fillStyle='#D2F5E3'; ctx.fill(); ctx.stroke();
+                        
+                        // Energy bars (visual feedback)
+                        let energy = Math.abs(resVel) * 5;
+                        ctx.fillStyle = `rgba(255, 0, 0, ${Math.min(energy/20, 1)})`;
+                        ctx.fillRect(w-20, h, 10, -energy*2);
                     }
 
                     requestAnimationFrame(() => this.animate());
@@ -478,14 +492,13 @@
             };
         }
 
-        // 初始化第一页
+        // Init
         updateSlide(0);
 
-        // 绑定共振按钮
+        // Bind Push Button
         document.getElementById('pushBtn').addEventListener('click', () => {
-            if(oscillators[5]) {
-                oscillators[5].push();
-                // 按钮动效
+            if(animators[8]) {
+                animators[8].push();
                 const btn = document.getElementById('pushBtn');
                 btn.style.transform = "scale(0.95)";
                 setTimeout(()=>btn.style.transform="scale(1)", 100);
