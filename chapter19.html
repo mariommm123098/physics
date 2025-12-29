@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Physics S1: Oscillations (Deep Dive)</title>
+    <title>Physics S1: Oscillations (Clean Fix)</title>
     <style>
         :root {
             --bg-color: #FAFAFA;
@@ -16,6 +16,7 @@
             --border-width: 3px;
             --card-radius: 20px;
             --font-main: 'Helvetica Neue', Arial, sans-serif;
+            --font-serif: 'Georgia', serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -73,12 +74,19 @@
         .concept-box {
             background: #f4f4f4; border-left: 5px solid black; padding: 12px; margin: 10px 0; font-size: 0.95rem;
         }
+        
+        /* 公式框：使用纯文本和HTML上标下标 */
         .formula-box {
             background: white; border: 2px solid black; padding: 15px; margin: 15px 0;
-            text-align: center; font-family: 'Times New Roman', serif; font-size: 1.4rem;
+            text-align: center; font-family: var(--font-serif); font-size: 1.4rem;
             font-style: italic; border-radius: 12px; box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            line-height: 1.4;
         }
-        .formula-explain { font-size: 0.85rem; color: #666; margin-top: 5px; font-family: var(--font-main); font-style: normal; }
+        /* 辅助说明文字 */
+        .formula-explain { 
+            font-size: 0.85rem; color: #666; margin-top: 8px; 
+            font-family: var(--font-main); font-style: normal; 
+        }
 
         /* Canvas */
         .canvas-container {
@@ -184,8 +192,8 @@
             <h2 lang="zh">03. 它是怎么变出来的？</h2>
             <h2 lang="en">03. Where does ω come from?</h2>
             
-            <p lang="zh">我们借用圆的速度，叫它 <strong>角频率 (Angular Frequency)</strong>，符号是希腊字母 $\omega$ (omega)。</p>
-            <p lang="en">We borrow the circle's speed, calling it <strong>Angular Frequency</strong>, symbol $\omega$ (omega).</p>
+            <p lang="zh">我们借用圆的速度，叫它 <strong>角频率 (Angular Frequency)</strong>，符号是希腊字母 <strong>ω</strong> (omega)。</p>
+            <p lang="en">We borrow the circle's speed, calling it <strong>Angular Frequency</strong>, symbol <strong>ω</strong> (omega).</p>
 
             <p lang="zh">速度 = 距离 / 时间。在圆里：</p>
             <p lang="en">Speed = Distance / Time. In a circle:</p>
@@ -214,8 +222,8 @@
             
             <h3 lang="zh">第一步：胡克定律</h3>
             <h3 lang="en">Step 1: Hooke's Law</h3>
-            <p lang="zh">弹簧被拉得越长 ($x$)，想缩回去的力 ($F$) 就越大。</p>
-            <p lang="en">The more you stretch ($x$), the harder it pulls back ($F$).</p>
+            <p lang="zh">弹簧被拉得越长 (x)，想缩回去的力 (F) 就越大。</p>
+            <p lang="en">The more you stretch (x), the harder it pulls back (F).</p>
             
             <div class="formula-box">
                 F = -k x
@@ -234,16 +242,16 @@
             <p lang="en">Let's combine Newton and Hooke.</p>
 
             <ul style="margin-left: 20px; font-size: 0.9rem; line-height: 1.8;">
-                <li><strong lang="zh">牛顿：</strong><strong lang="en">Newton:</strong> $F = ma$</li>
-                <li><strong lang="zh">胡克：</strong><strong lang="en">Hooke:</strong> $F = -kx$</li>
+                <li><strong lang="zh">牛顿 (Newton):</strong> F = ma</li>
+                <li><strong lang="zh">胡克 (Hooke):</strong> F = -kx</li>
             </ul>
 
-            <p lang="zh" style="margin-top:10px;">连立它们：$ma = -kx$ <br> 移项得到：$a = -(k/m)x$</p>
-            <p lang="en" style="margin-top:10px;">Combine: $ma = -kx$ <br> Rearrange: $a = -(k/m)x$</p>
+            <p lang="zh" style="margin-top:10px;">连立它们：ma = -kx <br> 移项得到：a = -(k/m)x</p>
+            <p lang="en" style="margin-top:10px;">Combine: ma = -kx <br> Rearrange: a = -(k/m)x</p>
 
             <div class="concept-box">
-                <span lang="zh">为了简洁，物理学家令 $k/m = \omega^2$。不要问为什么是平方，这是为了后面开根号方便。</span>
-                <span lang="en">For simplicity, physicists let $k/m = \omega^2$.</span>
+                <span lang="zh">为了简洁，物理学家令 k/m = ω²。不要问为什么是平方，这是为了后面开根号方便。</span>
+                <span lang="en">For simplicity, physicists let k/m = ω².</span>
             </div>
 
             <div class="formula-box">
@@ -270,8 +278,8 @@
             <div class="formula-box">
                 x = x₀ sin(ωt)
             </div>
-            <p lang="zh">如果是从最大处（最右边）开始释放呢？那就是 $cos$。</p>
-            <p lang="en">If released from max displacement? Then it's $cos$.</p>
+            <p lang="zh">如果是从最大处（最右边）开始释放呢？那就是 cos。</p>
+            <p lang="en">If released from max displacement? Then it's cos.</p>
         </div>
 
         <div class="card theme-red" data-index="7">
@@ -293,8 +301,8 @@
                 <div class="formula-explain">最大速度公式 (Max Velocity)</div>
             </div>
             
-            <p lang="zh">推导原理：其实就是对位移 $x$ 求导（斜率）。</p>
-            <p lang="en">Derivation: It's the derivative (slope) of $x$.</p>
+            <p lang="zh">推导原理：其实就是对位移 x 求导（斜率）。</p>
+            <p lang="en">Derivation: It's the derivative (slope) of x.</p>
         </div>
 
         <div class="card theme-green" data-index="8">
